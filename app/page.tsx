@@ -1,113 +1,182 @@
-import Image from 'next/image'
+"use client";
+import { useState, useRef, useEffect } from "react";
+import { Message } from "@/types/message";
+import { Send } from "react-feather";
+import LoadingDots from "@/components/LoadingDots";
 
 export default function Home() {
+  const [message, setMessage] = useState<string>("");
+  const [history, setHistory] = useState<Message[]>([
+    {
+      role: "assistant",
+      content:
+        "Hello! Ask me legal questions about immigration to the Netherlands.",
+    },
+  ]);
+  const lastMessageRef = useRef<HTMLDivElement | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleClick = () => {
+    if (message == "") return;
+    setHistory((oldHistory) => [
+      ...oldHistory,
+      { role: "user", content: message },
+    ]);
+    setMessage("");
+    setLoading(true);
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: message, history: history }),
+    })
+      .then(async (res) => {
+        const r = await res.json();
+        setHistory((oldHistory) => [...oldHistory, r]);
+        setLoading(false);
+      })
+      .catch((err) => {
+        alert(err);
+      });
+  };
+
+  const formatPageName = (url: string) => {
+    // Split the URL by "/" and get the last segment
+    const pageName = url.split("/").pop();
+
+    // Split by "-" and then join with space
+    if (pageName) {
+      const formattedName = pageName.split("-").join(" ");
+
+      // Capitalize only the first letter of the entire string
+      return formattedName.charAt(0).toUpperCase() + formattedName.slice(1);
+    }
+  };
+
+  //scroll to bottom of chat
+  useEffect(() => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [history]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+    <main className="h-screen bg-white p-6 flex flex-col">
+      <div className="flex flex-col gap-8 w-full items-center flex-grow max-h-full">
+        <h1 className=" text-4xl text-transparent font-extralight bg-clip-text bg-gradient-to-r from-violet-800 to-fuchsia-500">
+          IND chat
+        </h1>
+        <form
+          className="rounded-2xl border-purple-700 border-opacity-5  border lg:w-3/4 flex-grow flex flex-col bg-[url('/images/bg.png')] bg-cover max-h-full overflow-clip"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleClick();
+          }}
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          <div className="overflow-y-scroll flex flex-col gap-5 p-10 h-full">
+            {history.map((message: Message, idx) => {
+              const isLastMessage = idx === history.length - 1;
+              switch (message.role) {
+                case "assistant":
+                  return (
+                    <div
+                      ref={isLastMessage ? lastMessageRef : null}
+                      key={idx}
+                      className="flex gap-2"
+                    >
+                      <img
+                        src="images/assistant-avatar.png"
+                        className="h-12 w-12 rounded-full"
+                      />
+                      <div className="w-auto max-w-xl break-words bg-white rounded-b-xl rounded-tr-xl text-black p-6 shadow-[0_10px_40px_0px_rgba(0,0,0,0.15)]">
+                        <p className="text-sm font-medium text-violet-500 mb-2">
+                          AI assistant
+                        </p>
+                        {message.content}
+                        {message.links && (
+                          <div className="mt-4 flex flex-col gap-2">
+                            <p className="text-sm font-medium text-slate-500">
+                              Sources:
+                            </p>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+                            {message.links?.map((link) => {
+                              return (
+                                <a
+                                  href={link}
+                                  key={link}
+                                  className="block w-fit px-2 py-1 text-sm  text-violet-700 bg-violet-100 rounded"
+                                >
+                                  {formatPageName(link)}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                case "user":
+                  return (
+                    <div
+                      className="w-auto max-w-xl break-words bg-white rounded-b-xl rounded-tl-xl text-black p-6 self-end shadow-[0_10px_40px_0px_rgba(0,0,0,0.15)]"
+                      key={idx}
+                      ref={isLastMessage ? lastMessageRef : null}
+                    >
+                      <p className="text-sm font-medium text-violet-500 mb-2">
+                        You
+                      </p>
+                      {message.content}
+                    </div>
+                  );
+              }
+            })}
+            {loading && (
+              <div ref={lastMessageRef} className="flex gap-2">
+                <img
+                  src="images/assistant-avatar.png"
+                  className="h-12 w-12 rounded-full"
+                />
+                <div className="w-auto max-w-xl break-words bg-white rounded-b-xl rounded-tr-xl text-black p-6 shadow-[0_10px_40px_0px_rgba(0,0,0,0.15)]">
+                  <p className="text-sm font-medium text-violet-500 mb-4">
+                    AI assistant
+                  </p>
+                  <LoadingDots />
+                </div>
+              </div>
+            )}
+          </div>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+          {/* input area */}
+          <div className="flex sticky bottom-0 w-full px-6 pb-6 h-24">
+            <div className="w-full relative">
+              <textarea
+                aria-label="chat input"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message"
+                className="w-full h-full resize-none rounded-full border border-slate-900/10 bg-white pl-6 pr-24 py-[25px] text-base placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10 shadow-[0_10px_40px_0px_rgba(0,0,0,0.15)]"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleClick();
+                  }
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleClick();
+                }}
+                className="flex w-14 h-14 items-center justify-center rounded-full px-3 text-sm  bg-violet-600 font-semibold text-white hover:bg-violet-700 active:bg-violet-800 absolute right-2 bottom-2 disabled:bg-violet-100 disabled:text-violet-400"
+                type="submit"
+                aria-label="Send"
+                disabled={!message || loading}
+              >
+                <Send />
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </main>
-  )
+  );
 }

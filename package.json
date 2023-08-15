@@ -9,15 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@pinecone-database/pinecone": "^0.1.6",
     "@types/node": "20.4.10",
     "@types/react": "18.2.20",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.14",
+    "clsx": "^2.0.0",
+    "debug": "^4.3.4",
+    "follow-redirects": "^1.15.2",
+    "langchain": "^0.0.127",
     "next": "13.4.13",
+    "pinecone-client": "^1.1.0",
     "postcss": "8.4.27",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-feather": "^2.0.10",
+    "supports-color": "^8.1.1",
     "tailwindcss": "3.3.3",
     "typescript": "5.1.6"
+  },
+  "devDependencies": {
+    "encoding": "^0.1.13"
   }
 }

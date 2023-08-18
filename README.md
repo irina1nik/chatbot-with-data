@@ -1,6 +1,6 @@
 # OpenAI & LangChain chatbot with custom context knowledge base
 
-To learn how to use this repo watch [this tutorial video](/)
+To learn how to use this repo watch [this tutorial video](https://youtu.be/AMc2A5Abj3M)
 
 This chatbot uses Pinecone index to retrieve relevant information from a custom knowledge base.
 Learn how to create a Pinecone index in [this tutorial](https://youtu.be/k1LrBOtNARk)
@@ -34,6 +34,8 @@ npm run dev
 ```
 
 ## Deploy on Vercel
+
+!! If your Vercel app throws back a timeout error when deployed, the response is taking more than 5s, which is the limit of a free Vercel plan.
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
 

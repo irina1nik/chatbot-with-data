@@ -8,7 +8,6 @@ export async function POST(request: Request) {
     const question: string = body.query;
     const history: Message[] = body.history ?? []
 
-    // console.log(question, history)
     const res = await chain.call({
             question: question,
             chat_history: history.map(h => h.content).join("\n"),
